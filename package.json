@@ -1,0 +1,23 @@
+{
+  "name": "trabalho-final-ogmr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node main.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mathfreitas03/Trabalho-Final-OGMR.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mathfreitas03/Trabalho-Final-OGMR/issues"
+  },
+  "homepage": "https://github.com/mathfreitas03/Trabalho-Final-OGMR#readme",
+  "dependencies": {
+    "exec": "^0.2.1",
+    "express": "^5.1.0"
+  }
+}
