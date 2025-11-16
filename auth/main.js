@@ -19,10 +19,10 @@ async function getMAC(ip){
     return response
 }
 
-// Essa função não vai funcionar caso vocês tentem acessar alguma rota na mesma máquina que o "servidor" esteja rodando, isso acontece pq o ip da máquina na rede não fica mapeado, e sim o localhost
+// Essa função pode não funcionar caso vocês tentem acessar alguma rota na mesma máquina que o servidor esteja rodando
 
 async function verifyAdminMAC(ip) {
-    // TODO: Buscar MAC real do admin no macEsperado
+    // TODO: Buscar MAC real do admin no banco
     
     const macEsperado = "20:23:51:8b:3f:28".toLowerCase();
     const macEncontrado = await getMAC(ip);
