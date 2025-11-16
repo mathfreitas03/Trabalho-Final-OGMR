@@ -13,7 +13,7 @@ server.get('/', async (req, res) => {
     if (accepted) {
         res.sendFile(path.join(__dirname, 'web-app', 'index.html'));
     } else {
-        res.status(403).send("Esta máquina não está autorizada a acessar este serviço.");
+        res.status(403).sendFile(path.join(__dirname, 'web-app', 'forbidden.html'));
     }
 })
 
