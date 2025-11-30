@@ -18,7 +18,7 @@ async function getMAC(ip) {
 async function verifyAdminMAC(ip) {
     // TODO: Buscar MAC real do admin no banco
     
-    const macEsperado = "5e:51:83:b6:d1:75".toLowerCase();
+    const macEsperado = "76:ee:83:73:ad:42"
     const macEncontrado = await getMAC(ip);
 
     console.log("Encontrado: ", macEncontrado)
