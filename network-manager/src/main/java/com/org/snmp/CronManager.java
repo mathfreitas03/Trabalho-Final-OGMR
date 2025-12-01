@@ -8,6 +8,8 @@ import java.util.concurrent.*;
 
 import com.org.db.PostgresPool;
 
+// Código provisório apenas para testes em ambientes Windows (a classe não utiliza o crontab do Linux).
+
 public class CronManager {
 
     private static final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(4);

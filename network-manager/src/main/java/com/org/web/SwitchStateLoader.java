@@ -17,7 +17,7 @@ public class SwitchStateLoader {
         JSONArray result = new JSONArray();
 
         String switchQuery = "SELECT id, hostname, ipv4 FROM switch";
-        String portQuery = "SELECT id, number, ipv4, status, lockable FROM port WHERE switch_id = ?";
+        String portQuery = "SELECT id, number, ipv4, mac, status, lockable FROM port WHERE switch_id = ?";
 
         try (Connection conn = PostgresPool.getConnection();
              PreparedStatement switchStmt = conn.prepareStatement(switchQuery);
@@ -42,6 +42,7 @@ public class SwitchStateLoader {
                             portJson.put("id", portRs.getInt("id"));
                             portJson.put("number", portRs.getInt("number"));
                             portJson.put("ipv4", portRs.getString("ipv4"));
+                            portJson.put("mac", portRs.getString("mac"));
                             portJson.put("status", portRs.getBoolean("status"));
                             portJson.put("lockable", portRs.getBoolean("lockable"));
                             portsJson.put(portJson);

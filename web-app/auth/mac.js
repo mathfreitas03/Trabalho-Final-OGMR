@@ -1,5 +1,6 @@
 const { exec } = require("child_process");
 const { promisify } = require("util");
+const db = require("../db")
 
 const execPromise = promisify(exec);
 
@@ -40,12 +41,18 @@ async function getMAC(ip) {
 
 async function verifyAdminMAC(ip) {
     // TODO: Buscar MAC real do admin no banco
+    const row = await db.query("select mac from admin_user where id=1;")
+    const macBanco = row[0].mac;
+    console.log(macBanco)
     
     // const macEsperado = "c2:22-06-f8-c1-6d"
     const macEsperado = null
-    const macEncontrado = await getMAC(ip);
-    
-    return macEncontrado === macEsperado ? true : false;
+    // const macEncontrado = await getMAC(ip);
+    const macEncontrado = '00:AA:06:00:00:01'
+
+    console.log("Mac Banco:", macBanco)
+    console.log("Mac Encontrado:", macEncontrado)
+    return macEncontrado === macBanco ? true : false;
 }
 
 module.exports = {

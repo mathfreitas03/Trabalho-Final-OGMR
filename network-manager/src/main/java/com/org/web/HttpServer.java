@@ -2,31 +2,32 @@ package com.org.web;
 
 import java.io.*;
 import java.net.*;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.org.snmp.CronManager;
-
 public class HttpServer {
 
-    private int port;
-    private boolean running = false;
+    private final int port;
 
     public HttpServer(int port) {
         this.port = port;
     }
-    
-    // Inicia o servidor e bloqueia a thread atual
+
     public void start() {
-        running = true;
         try (ServerSocket serverSocket = new ServerSocket(port)) {
+
             System.out.println("Servidor HTTP rodando na porta " + port);
 
-            while (running) {
-                Socket clientSocket = serverSocket.accept();
-                handleClient(clientSocket);
+            var pool = Executors.newCachedThreadPool();
+
+            while (true) {
+                Socket socket = serverSocket.accept();
+                pool.submit(() -> handleClient(socket));
             }
 
         } catch (IOException e) {
@@ -34,19 +35,17 @@ public class HttpServer {
         }
     }
 
-    // Permite parar o servidor (fora do try-with-resources, se necessário)
-    public void stop() {
-        running = false;
-        System.out.println("Servidor parado.");
-    }
-
     private void handleClient(Socket clientSocket) {
         try (
-            BufferedReader in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(clientSocket.getOutputStream()))
+            BufferedReader in = new BufferedReader(
+                new InputStreamReader(clientSocket.getInputStream(), StandardCharsets.UTF_8)
+            );
+            BufferedWriter out = new BufferedWriter(
+                new OutputStreamWriter(clientSocket.getOutputStream(), StandardCharsets.UTF_8)
+            )
         ) {
             String requestLine = in.readLine();
-            if (requestLine == null) return;
+            if (requestLine == null || requestLine.isBlank()) return;
 
             System.out.println("Recebido: " + requestLine);
 
@@ -56,92 +55,150 @@ public class HttpServer {
 
             String line;
             int contentLength = 0;
-            while (!(line = in.readLine()).isEmpty()) {
-                if (line.startsWith("Content-Length:")) {
-                    contentLength = Integer.parseInt(line.split(" ")[1]);
+
+            while ((line = in.readLine()) != null && !line.isEmpty()) {
+                if (line.toLowerCase().startsWith("content-length:")) {
+                    contentLength = Integer.parseInt(line.split(":")[1].trim());
                 }
             }
 
             String body = null;
             if (contentLength > 0) {
                 char[] buf = new char[contentLength];
-                in.read(buf, 0, contentLength);
+                in.read(buf);
                 body = new String(buf);
-                System.out.println("Corpo recebido: " + body);
             }
 
-            // POST /block
             if ("POST".equals(method) && "/block".equals(path)) {
+
                 JSONObject json = new JSONObject(body);
-                List<Integer> ids = json.getJSONArray("ids").toList().stream()
-                                        .map(o -> (Integer) o)
-                                        .toList();
+
+                List<Integer> ids =
+                        json.getJSONArray("ids").toList().stream()
+                        .map(o -> (Integer) o)
+                        .toList();
+
                 int durationSeconds = json.getInt("durationSeconds");
 
-                CronManager.scheduleBlock(ids, durationSeconds);
-                sendJsonResponse(out, 200, "{\"status\":\"ok\"}");
+                String portsArg = ids.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(","));
 
-            } else if ("POST".equals(method) && "/unblock".equals(path)) {
+                ProcessBuilder pb = new ProcessBuilder(
+                        "/bin/bash",
+                        "/caminho/do/script/schedule_ports.sh",
+                        "block", portsArg,
+                        String.valueOf(durationSeconds)
+                );
+
+                pb.inheritIO();
+
+                pb.start().waitFor();
+
+                sendJsonResponse(out, 200, "{\"status\":\"ok\"}");
+                return;
+            }
+
+            if ("POST".equals(method) && "/unblock".equals(path)) {
+
                 JSONObject json = new JSONObject(body);
-                List<Integer> ids = json.getJSONArray("ids").toList().stream()
-                                        .map(o -> (Integer) o)
-                                        .toList();
 
-                CronManager.unblockNow(ids);
+                List<Integer> ids =
+                        json.getJSONArray("ids").toList().stream()
+                        .map(o -> (Integer) o)
+                        .toList();
+
+                String portsArg = ids.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(","));
+
+                ProcessBuilder pb = new ProcessBuilder(
+                        "/bin/bash",
+                        "/caminho/do/script/schedule_ports.sh",
+                        "unblock", portsArg
+                );
+
+                pb.inheritIO();
+
+                pb.start().waitFor();
+
                 sendJsonResponse(out, 200, "{\"status\":\"ok\"}");
-            } else if ("GET".equals(method) && "/state".equals(path)) {
+                return;
+            }
+
+            if ("GET".equals(method) && "/state".equals(path)) {
+
                 JSONArray rawState = SwitchStateLoader.loadCurrentState();
                 JSONArray frontendArray = new JSONArray();
 
                 for (int i = 0; i < rawState.length(); i++) {
+
                     JSONObject sw = rawState.getJSONObject(i);
-                    int switchId = sw.getInt("id");
-                    String hostname = sw.getString("hostname");
+
+                    JSONObject switchJson = new JSONObject();
+                    switchJson.put("id", sw.getInt("id"));
+                    switchJson.put("hostname", sw.getString("hostname"));
+
+                    JSONArray portsArray = new JSONArray();
+
                     JSONArray ports = sw.getJSONArray("ports");
 
                     for (int j = 0; j < ports.length(); j++) {
+
                         JSONObject p = ports.getJSONObject(j);
+
                         JSONObject portJson = new JSONObject();
+
                         portJson.put("id", p.getInt("id"));
-                        portJson.put("switch_id", switchId);
-                        portJson.put("hostname", hostname);
-                        portJson.put("porta", p.getInt("number"));
-                        portJson.put("ip", p.optString("ipv4", ""));
+                        portJson.put("number", p.getInt("number"));
+                        portJson.put("mac", p.optString("mac", ""));
+                        portJson.put("ipv4", p.optString("ipv4", ""));
                         portJson.put("status", p.getBoolean("status"));
                         portJson.put("lockable", p.getBoolean("lockable"));
 
-                        frontendArray.put(portJson);
+                        portsArray.put(portJson);
                     }
+
+                    switchJson.put("ports", portsArray);
+
+                    frontendArray.put(switchJson);
                 }
 
                 sendJsonResponse(out, 200, frontendArray.toString());
-            }
-            else{
-                sendJsonResponse(out, 404, "{\"error\":\"Not found\"}");
+                return;
             }
 
-        } catch (IOException e) {
+            sendJsonResponse(out, 404, "{\"error\":\"Not found\"}");
+
+        } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try { clientSocket.close(); } catch (IOException e) { e.printStackTrace(); }
         }
     }
 
-    private void sendJsonResponse(BufferedWriter out, int statusCode, String json) throws IOException {
-        String httpResponse =
-            "HTTP/1.1 " + statusCode + " OK\r\n" +
-            "Content-Type: application/json; charset=UTF-8\r\n" +
-            "Content-Length: " + json.getBytes().length + "\r\n" +
-            "\r\n" +
-            json;
+    private void sendJsonResponse(BufferedWriter out, int statusCode, String json)
+            throws IOException {
 
-        out.write(httpResponse);
+        byte[] data = json.getBytes(StandardCharsets.UTF_8);
+
+        String statusText = switch (statusCode) {
+            case 200 -> "OK";
+            case 404 -> "Not Found";
+            case 500 -> "Internal Server Error";
+            default -> "OK";
+        };
+
+        String header =
+                "HTTP/1.1 " + statusCode + " " + statusText + "\r\n" +
+                "Content-Type: application/json; charset=utf-8\r\n" +
+                "Content-Length: " + data.length + "\r\n" +
+                "Connection: close\r\n\r\n";
+
+        out.write(header);
+        out.write(json);
         out.flush();
     }
 
-    // Main de exemplo
-    // public static void main(String[] args) {
-    //     HttpServer server = new HttpServer(8080);
-    //     server.start();
-    // }
+    public static void main(String[] args) {
+        new HttpServer(8080).start();
+    }
 }

@@ -65,11 +65,14 @@ server.post("/login.html", async (req, res) => {
 
 server.get("/api/ports", async (req, res) => {
   try {
-    // repassa a requisição GET para o Java
     const query = req.query.switch ? `?switch=${req.query.switch}` : "";
-    const response = await fetch(`${JAVA_SERVER}/ports${query}`);
+    const response = await fetch(`${JAVA_SERVER}/state${query}`);
     const data = await response.json();
-    res.json(data);
+
+    // garante que seja array de switches
+    const arrayData = Array.isArray(data) ? data : data.switches ? data.switches : [];
+
+    res.json(arrayData);
   } catch (err) {
     console.error("Erro ao obter portas do Java:", err);
     res.status(500).json({ error: "Falha ao buscar portas" });
