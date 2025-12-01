@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Gerenciador de Portas</title>
+
+<link href="css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+:root { --verde-escuro:#064e3b; }
+body { background:#f7faf7; }
+.locked { opacity:0.6; }
+.port-state { font-weight:600; }
+.btn-lock { min-width:48px; }
+.small-muted { color:#6b6f6b; }
+.timer-input { max-width:200px; }
+</style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg" style="background:var(--verde-escuro);">
+<div class="container-fluid">
+<a class="navbar-brand text-white">Gerenciador de Portas - Admin</a>
+</div>
+</nav>
+
+<main class="container py-4">
+
+<div class="card p-3 mb-4">
+<div class="d-flex gap-3 align-items-center">
+
+<div>
+<label class="form-label small-muted">Switch</label>
+<select id="switchSelect" class="form-select"></select>
+</div>
+
+<div>
+<label class="form-label small-muted">Filtro</label>
+<input id="filterText" class="form-control" placeholder="IP ou host">
+</div>
+
+<button id="refreshBtn" class="btn btn-outline-secondary mt-4">Atualizar</button>
+
+<div class="ms-auto d-flex gap-2">
+<button id="selectAllBtn" class="btn btn-sm btn-secondary">Selecionar todos</button>
+<button id="blockSelectedBtn" class="btn btn-success btn-sm">Bloquear selecionados</button>
+<button id="unblockSelectedBtn" class="btn btn-outline-danger btn-sm">Desbloquear selecionados</button>
+</div>
+
+</div>
+</div>
+
+<div class="card">
+<div class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th></th>
+<th>Switch</th>
+<th>Porta</th>
+<th>Host</th>
+<th>IP</th>
+<th>Status</th>
+<th>Ações</th>
+</tr>
+</thead>
+<tbody id="portsTableBody"></tbody>
+</table>
+</div>
+</div>
+
+</main>
+
+<!-- Modal -->
+<div class="modal fade" id="timerModal">
+<div class="modal-dialog modal-sm">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h5>Tempo de Bloqueio</h5>
+      <button class="btn-close" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <input id="timerTargetIds" type="hidden"/>
+      <div class="mb-2 small-muted">Defina o tempo (O valor 0 bloqueará a porta por 10 segundos)</div>
+
+      <input id="timerValue" type="number" class="form-control mb-2" min="0" value="30">
+      <select id="timerUnit" class="form-select">
+        <option value="seconds">Segundos</option>
+        <option value="minutes">Minutos</option>
+        <option value="hours">Horas</option>
+        <option value="days">Dias</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+      <button id="applyTimerBtn" class="btn btn-success">Aplicar</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<script src="js/bootstrap.bundle.min.js"></script>
+
+<script>
+
+// -----------------------
+// CONFIGURAÇÃO API
+// -----------------------
+const API = {
+  block: "/api/port/block",
+  unblock: "/api/port/unblock",
+  list: "/api/ports"  // novo endpoint para obter o status atual
+};
+
+// -----------------------
+// MOCK DE DADOS
+// -----------------------
+/*
+const mockPorts = [
+  { id:1, switch_id:1, hostname:"SW-F203-A", porta:1, ip:"10.0.0.1", status:true, lockable:false },
+  { id:2, switch_id:1, hostname:"SW-F203-A", porta:2, ip:"192.168.10.10", status:true, lockable:false },
+  { id:3, switch_id:1, hostname:"SW-F203-A", porta:3, ip:"192.168.10.11", status:true, lockable:true },
+  { id:4, switch_id:1, hostname:"SW-F203-A", porta:4, ip:"192.168.10.12", status:false, lockable:true },
+  { id:5, switch_id:1, hostname:"SW-F203-A", porta:5, ip:"192.168.10.13", status:true, lockable:true },
+  { id:6, switch_id:2, hostname:"SW-F203-B", porta:1, ip:"10.0.0.2", status:true, lockable:false },
+  { id:7, switch_id:2, hostname:"SW-F203-B", porta:2, ip:"192.168.10.20", status:true, lockable:false },
+  { id:8, switch_id:2, hostname:"SW-F203-B", porta:3, ip:"192.168.10.21", status:true, lockable:true },
+  { id:9, switch_id:2, hostname:"SW-F203-B", porta:4, ip:"192.168.10.22", status:false, lockable:true }
+];
+*/
+
+// -----------------------
+// ESTADO
+// -----------------------
+let ports = [];
+let selected = new Set();
+
+const tbody = document.getElementById("portsTableBody");
+const switchSelect = document.getElementById("switchSelect");
+const filterText = document.getElementById("filterText");
+
+document.addEventListener("DOMContentLoaded", init);
+
+// -----------------------
+async function init() {
+  setupEvents();
+  loadRooms();
+  await loadPorts();
+  startPolling();
+}
+
+// -----------------------
+function setupEvents() {
+  document.getElementById("refreshBtn").onclick = loadPorts;
+  switchSelect.onchange = loadPorts;
+  filterText.oninput = renderTable;
+
+  document.getElementById("selectAllBtn").onclick = () => {
+    ports.filter(p => p.lockable).forEach(p => selected.add(p.id));
+    renderTable();
+  };
+
+  document.getElementById("blockSelectedBtn").onclick = () => {
+    if (!selected.size) return alert("Nada selecionado");
+    document.getElementById("timerTargetIds").value = [...selected].join(",");
+    new bootstrap.Modal(timerModal).show();
+  };
+
+  document.getElementById("unblockSelectedBtn").onclick = () => {
+    if (!selected.size) return alert("Nada selecionado");
+    postUnblock([...selected]);
+  };
+
+  document.getElementById("applyTimerBtn").onclick = () => {
+    const raw = document.getElementById("timerTargetIds").value;
+    const ids = raw.split(',').map(Number);
+    const value = Number(document.getElementById("timerValue").value);
+    const unit = document.getElementById("timerUnit").value;
+
+    // Converte para segundos
+    let durationSeconds = value;
+    if (unit === "minutes") durationSeconds *= 60;
+    if (unit === "hours") durationSeconds *= 3600;
+    if (unit === "days") durationSeconds *= 86400;
+
+    postBlock(ids, durationSeconds);
+    bootstrap.Modal.getInstance(timerModal).hide();
+  };
+}
+
+// -----------------------
+function loadRooms() {
+  const switches = [...new Set(ports.map(p => p.switchId))];
+  switchSelect.innerHTML = '<option value="">Todos</option>';
+  switches.forEach(id => {
+    let o = document.createElement("option");
+    o.value = id;
+    o.textContent = `Switch ${id}`;
+    switchSelect.appendChild(o);
+  });
+}
+
+// -----------------------
+async function loadPorts() {
+  try {
+    let sw = switchSelect.value;
+    const res = await fetch(`${API.list}${sw ? "?switch=" + sw : ""}`);
+    if (!res.ok) throw new Error(await res.text());
+    const data = await res.json();
+
+    // Flatten: cada switch -> suas portas
+    ports = [];
+    data.forEach(swObj => {
+      swObj.ports.forEach(p => {
+        ports.push({
+          id: p.id,
+          switchId: swObj.id,
+          portName: p.number,
+          hostName: swObj.hostname,
+          ip: p.ipv4,
+          locked: !p.status,
+          lockable: p.lockable
+        });
+      });
+    });
+
+    renderTable();
+
+  } catch (err) {
+    console.warn("Não foi possível buscar do Node/Java, usando mock:", err);
+
+    // fallback mock para testes
+    /*
+    let sw = switchSelect.value;
+    ports = mockPorts
+      .filter(p => !sw || p.switch_id == sw)
+      .map(p => ({
+        id: p.id,
+        switchId: p.switch_id,
+        portName: p.porta,
+        hostName: p.hostname,
+        ip: p.ip,
+        locked: !p.status,
+        lockable: p.lockable
+      }));
+    */
+    renderTable();
+  }
+}
+
+// -----------------------
+function renderTable() {
+  const q = filterText.value.toLowerCase();
+  tbody.innerHTML = "";
+
+  ports
+    .filter(p => !q || (p.ip + p.hostName).toLowerCase().includes(q))
+    .forEach(p => {
+      let tr = document.createElement("tr");
+      if (p.locked) tr.classList.add("locked");
+
+      tr.innerHTML = `
+        <td><input type="checkbox" ${p.lockable ? '' : 'disabled style="display:none;"'}${selected.has(p.id) ? 'checked' : ''}></td>
+        <td>${p.switchId}</td>
+        <td>${p.portName}</td>
+        <td>${p.hostName}</td>
+        <td>${p.ip}</td>
+        <td class="port-state">${p.locked ? '<span class="badge bg-danger">Bloqueada</span>' : '<span class="badge bg-success">Liberada</span>'}</td>
+        <td><button class="btn btn-sm btn-outline-secondary lockBtn" ${p.lockable ? '' : 'disabled title="Esta porta não pode ser bloqueada"'}>${p.locked ? '🔓' : '🔒'}</button></td>
+      `;
+
+      tr.querySelector("input").onchange = e => {
+        e.target.checked ? selected.add(p.id) : selected.delete(p.id);
+      };
+
+      tr.querySelector(".lockBtn").onclick = () => {
+        if (!p.lockable) return;
+        p.locked ? postUnblock([p.id]) : openTimerModal(p.id);
+      };
+
+      tbody.appendChild(tr);
+    });
+}
+
+// -----------------------
+function openTimerModal(id) {
+  document.getElementById("timerTargetIds").value = id;
+  new bootstrap.Modal(timerModal).show();
+}
+
+// -----------------------
+// REQUISIÇÕES REAIS PARA O NODE.JS
+// -----------------------
+async function postBlock(ids, durationSeconds = 600) {
+  try {
+    const res = await fetch(API.block, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids, durationSeconds })
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    ports.forEach(p => { if (ids.includes(p.id)) p.locked = true; });
+    selected.clear();
+    renderTable();
+  } catch (err) {
+    console.error("Erro ao bloquear portas:", err);
+    alert("Falha ao bloquear portas");
+  }
+}
+
+async function postUnblock(ids) {
+  try {
+    const res = await fetch(API.unblock, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids })
+    });
+    if (!res.ok) throw new Error(await res.text());
+
+    ports.forEach(p => { if (ids.includes(p.id)) p.locked = false; });
+    selected.clear();
+    renderTable();
+  } catch (err) {
+    console.error("Erro ao desbloquear portas:", err);
+    alert("Falha ao desbloquear portas");
+  }
+}
+
+// -----------------------
+// POLLING AUTOMÁTICO
+// -----------------------
+function startPolling() {
+  setInterval(async () => {
+    const currentSelected = new Set(selected); // salva seleção
+    await loadPorts();
+    selected = currentSelected; // restaura seleção
+    renderTable();
+  }, 10000); // a cada 10 segundos
+}
+
+</script>
+
+</body>
+</html>

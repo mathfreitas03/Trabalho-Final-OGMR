@@ -2,9 +2,9 @@
   "name": "trabalho-final-ogmr",
   "version": "1.0.0",
   "description": "",
-  "main": "main.js",
+  "main": "./web-app/server.js",
   "scripts": {
-    "dev": "nodemon server.js"
+    "dev": "nodemon web-app/server.js"
   },
   "repository": {
     "type": "git",
@@ -17,8 +17,11 @@
   },
   "homepage": "https://github.com/mathfreitas03/Trabalho-Final-OGMR#readme",
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "exec": "^0.2.1",
     "express": "^5.1.0",
-    "nodemon": "^3.1.11"
+    "node-fetch": "^2.7.0",
+    "nodemon": "^3.1.11",
+    "pg": "^8.16.3"
   }
 }

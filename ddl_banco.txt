@@ -20,7 +20,7 @@ create table port (
     unique (switch_id, number)                  -- evita duplicar portas no mesmo switch
 );
 
-CREATE TABLE trap_event (
+create table trap_event (
     id serial PRIMARY KEY,
     switch_id integer NOT NULL REFERENCES switch(id) ON DELETE CASCADE,
     port_id integer NOT NULL REFERENCES port(id) ON DELETE CASCADE,
