@@ -1,8 +1,14 @@
+com/org/snmp/SnmpScanner.class
 com/org/Main2.class
-com/org/snmp/CronManager.class
-com/org/web/HttpServer.class
+com/org/snmp/SnmpScanner$SwitchRecord.class
+com/org/snmp/SnmpService$Host.class
 com/org/db/PostgresPool.class
+com/org/snmp/SnmpService$SnmpSetResult.class
 com/org/snmp/PortManager$PortSNMPInfo.class
 com/org/snmp/PortManager.class
-com/org/Main.class
+com/org/snmp/SnmpService.class
+com/org/snmp/SnmpService$PortStatus.class
 com/org/web/SwitchStateLoader.class
+com/org/web/HttpServer.class
+com/org/Main.class
+com/org/snmp/SnmpService$SwitchInfo.class

@@ -63,7 +63,7 @@ public class PortManager {
         if (ports.isEmpty())
             throw new RuntimeException("Nenhuma porta encontrada no banco.");
 
-        // Agrupar portas por switch (cada switch = 1 sessão SNMP)
+        // Agrupa portas por switch (cada switch = 1 sessão SNMP)
         Map<Integer, List<PortSNMPInfo>> grouped = groupBySwitch(ports);
 
         for (int switchId : grouped.keySet()) {

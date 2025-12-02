@@ -1,3 +1,5 @@
+// IMPORTANTE: ESSA CLASSE NÃO É MAIS USADA
+
 package com.org.snmp;
 
 import java.sql.Connection;
