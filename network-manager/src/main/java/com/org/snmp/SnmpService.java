@@ -1,4 +1,4 @@
-// IMPORTANTE: ESSA CLASSE NÃO É MAIS USADA
+// IMPORTANTE: ESSA CLASSE NÃO É MAIS USSDA
 
 package com.org.snmp;
 

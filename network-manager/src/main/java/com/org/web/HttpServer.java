@@ -173,40 +173,44 @@ public class HttpServer {
 
                 for (int i = 0; i < rawState.length(); i++) {
 
-                JSONObject sw = rawState.getJSONObject(i);
-                JSONObject switchJson = new JSONObject();
-                switchJson.put("id", sw.getInt("id"));
-                switchJson.put("hostname", sw.getString("hostname"));  
-                JSONArray portsArray = new JSONArray();
-                JSONArray ports = sw.getJSONArray("ports");
+                    JSONObject sw = rawState.getJSONObject(i);
 
-                for (int j = 0; j < ports.length(); j++) {
+                    JSONObject switchJson = new JSONObject();
+                    switchJson.put("id", sw.getInt("id"));
+                    switchJson.put("hostname", sw.getString("hostname"));
 
-                    JSONObject p = ports.getJSONObject(j);
+                    JSONArray portsArray = new JSONArray();
+                    JSONArray ports = sw.getJSONArray("ports");
 
-                    JSONObject portJson = new JSONObject();
+                    for (int j = 0; j < ports.length(); j++) {
 
-                    portJson.put("id", p.getInt("id"));
-                    portJson.put("number", p.getInt("number"));
-                    portJson.put("ifindex", p.optInt("ifindex", 0));
-                    portJson.put("hostname", p.optString("hostname", ""));
-                    portJson.put("mac", p.optString("mac", ""));
-                    portJson.put("ipv4", p.optString("ipv4", ""));
-                    portJson.put("is_blocked", p.optBoolean("is_blocked", true));
-                    portJson.put("lockable", p.getBoolean("lockable"));
+                        JSONObject p = ports.getJSONObject(j);
 
-                    portsArray.put(portJson);
+                        JSONObject portJson = new JSONObject();
+
+                        portJson.put("id", p.getInt("id"));
+                        portJson.put("number", p.getInt("number"));     // ifIndex real
+                        portJson.put("hostname", p.optString("hostname", ""));
+                        portJson.put("mac", p.optString("mac", ""));
+                        portJson.put("ipv4", p.optString("ipv4", ""));
+
+                        // Correção 1: garantir booleano correto
+                        portJson.put("is_blocked", p.optBoolean("is_blocked", false));
+
+                        // Correção 2: evitar crash caso lockable seja null
+                        portJson.put("lockable", p.optBoolean("lockable", false));
+
+                        portsArray.put(portJson);
+                    }
+
+                    switchJson.put("ports", portsArray);
+                    frontendArray.put(switchJson);
                 }
-
-                switchJson.put("ports", portsArray);
-
-                frontendArray.put(switchJson);
-            }
-
 
                 sendJsonResponse(out, 200, frontendArray.toString());
                 return;
             }
+
 
             sendJsonResponse(out, 404, "{\"error\":\"Not found\"}");
 

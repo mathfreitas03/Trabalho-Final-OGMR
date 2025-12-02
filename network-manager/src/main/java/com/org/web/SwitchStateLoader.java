@@ -1,6 +1,9 @@
 package com.org.web;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -17,7 +20,7 @@ public class SwitchStateLoader {
         JSONArray result = new JSONArray();
 
         String switchQuery = "SELECT id, hostname, ipv4 FROM switch";
-        String portQuery = "SELECT id, number, ipv4, mac, status, lockable FROM port WHERE switch_id = ?";
+        String portQuery = "SELECT id, number, ipv4, mac, is_blocked, lockable FROM port WHERE switch_id = ?";
 
         try (Connection conn = PostgresPool.getConnection();
              PreparedStatement switchStmt = conn.prepareStatement(switchQuery);
@@ -43,7 +46,7 @@ public class SwitchStateLoader {
                             portJson.put("number", portRs.getInt("number"));
                             portJson.put("ipv4", portRs.getString("ipv4"));
                             portJson.put("mac", portRs.getString("mac"));
-                            portJson.put("status", portRs.getBoolean("status"));
+                            portJson.put("is_blocked", portRs.getBoolean("is_blocked"));
                             portJson.put("lockable", portRs.getBoolean("lockable"));
                             portsJson.put(portJson);
                         }

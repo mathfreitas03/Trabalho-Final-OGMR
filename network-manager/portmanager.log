@@ -1,0 +1,48 @@
+2025-12-02 10:23:41 Executando: block 96
+Erro no PortManager:
+java.lang.IllegalStateException: Pool não inicializado.
+	at com.org.db.PostgresPool.getConnection(PostgresPool.java:34)
+	at com.org.snmp.PortManager.loadPortsSNMPInfo(PortManager.java:117)
+	at com.org.snmp.PortManager.performAction(PortManager.java:61)
+	at com.org.snmp.PortManager.main(PortManager.java:49)
+Desbloqueio agendado para 02/12 às 10:24
+Error: Could not find or load main class .home.matheus-freitas.Documentos.UDESC.OGMR.Trabalho-Final-OGMR.network-manager.target.generated-sources
+Caused by: java.lang.ClassNotFoundException: /home/matheus-freitas/Documentos/UDESC/OGMR/Trabalho-Final-OGMR/network-manager/target/generated-sources
+2025-12-02 10:24:43 Executando: block 97
+Erro no PortManager:
+java.lang.IllegalStateException: Pool não inicializado.
+	at com.org.db.PostgresPool.getConnection(PostgresPool.java:34)
+	at com.org.snmp.PortManager.loadPortsSNMPInfo(PortManager.java:117)
+	at com.org.snmp.PortManager.performAction(PortManager.java:61)
+	at com.org.snmp.PortManager.main(PortManager.java:49)
+Desbloqueio agendado para 02/12 às 10:25
+2025-12-02 10:24:51 Executando: block 97
+Erro no PortManager:
+java.lang.IllegalStateException: Pool não inicializado.
+	at com.org.db.PostgresPool.getConnection(PostgresPool.java:34)
+	at com.org.snmp.PortManager.loadPortsSNMPInfo(PortManager.java:117)
+	at com.org.snmp.PortManager.performAction(PortManager.java:61)
+	at com.org.snmp.PortManager.main(PortManager.java:49)
+Desbloqueio agendado para 02/12 às 10:25
+2025-12-02 10:24:54 Executando: block 96
+Erro no PortManager:
+java.lang.IllegalStateException: Pool não inicializado.
+	at com.org.db.PostgresPool.getConnection(PostgresPool.java:34)
+	at com.org.snmp.PortManager.loadPortsSNMPInfo(PortManager.java:117)
+	at com.org.snmp.PortManager.performAction(PortManager.java:61)
+	at com.org.snmp.PortManager.main(PortManager.java:49)
+Desbloqueio agendado para 02/12 às 10:25
+2025-12-02 10:24:57 Executando: block 96
+Erro no PortManager:
+java.lang.IllegalStateException: Pool não inicializado.
+	at com.org.db.PostgresPool.getConnection(PostgresPool.java:34)
+	at com.org.snmp.PortManager.loadPortsSNMPInfo(PortManager.java:117)
+	at com.org.snmp.PortManager.performAction(PortManager.java:61)
+	at com.org.snmp.PortManager.main(PortManager.java:49)
+Desbloqueio agendado para 02/12 às 10:54
+Error: Could not find or load main class .home.matheus-freitas.Documentos.UDESC.OGMR.Trabalho-Final-OGMR.network-manager.target.generated-sources
+Caused by: java.lang.ClassNotFoundException: /home/matheus-freitas/Documentos/UDESC/OGMR/Trabalho-Final-OGMR/network-manager/target/generated-sources
+Error: Could not find or load main class .home.matheus-freitas.Documentos.UDESC.OGMR.Trabalho-Final-OGMR.network-manager.target.generated-sources
+Caused by: java.lang.ClassNotFoundException: /home/matheus-freitas/Documentos/UDESC/OGMR/Trabalho-Final-OGMR/network-manager/target/generated-sources
+Error: Could not find or load main class .home.matheus-freitas.Documentos.UDESC.OGMR.Trabalho-Final-OGMR.network-manager.target.generated-sources
+Caused by: java.lang.ClassNotFoundException: /home/matheus-freitas/Documentos/UDESC/OGMR/Trabalho-Final-OGMR/network-manager/target/generated-sources

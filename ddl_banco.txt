@@ -24,15 +24,6 @@ create table port (
     unique (switch_id, number)
 );
 
-create table trap_event (
-    id serial primary key,
-    switch_id integer not null references switch(id) on delete cascade,
-    port_id integer not null references port(id) on delete cascade,
-    event_type varchar(20) not null,
-    event_time timestamp not null default now(),
-    raw_data text
-);
-
 create table scheduled_port_tasks (
     id serial primary key,
     port_id integer not null references port(id) on delete cascade,

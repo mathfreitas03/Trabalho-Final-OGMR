@@ -69,15 +69,30 @@ server.get("/api/ports", async (req, res) => {
     const response = await fetch(`${JAVA_SERVER}/state${query}`);
     const data = await response.json();
 
-    // garante que seja array de switches
-    const arrayData = Array.isArray(data) ? data : data.switches ? data.switches : [];
+    let switches = [];
 
-    res.json(arrayData);
+    // Caso 1 → Java retorna array diretamente (formato correto)
+    if (Array.isArray(data)) {
+      switches = data;
+    }
+    // Caso 2 → Java retorna objeto { switches: [...] }
+    else if (data && Array.isArray(data.switches)) {
+      switches = data.switches;
+    }
+    // Caso inválido → Retorna erro claro
+    else {
+      console.error("Formato inesperado vindo do Java:", data);
+      return res.status(500).json({ error: "Formato inesperado vindo do servidor Java" });
+    }
+
+    return res.json(switches);
+
   } catch (err) {
     console.error("Erro ao obter portas do Java:", err);
     res.status(500).json({ error: "Falha ao buscar portas" });
   }
 });
+
 
 server.post("/api/port/block", async (req, res) => {
   try {

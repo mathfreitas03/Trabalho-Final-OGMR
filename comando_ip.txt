@@ -1,0 +1,5 @@
+sudo ip addr flush dev enp1s0
+sudo ip addr add 10.90.90.95/8 dev enp1s0
+sudo ip link set enp1s0 up
+
+snmpwalk -v1 -c private 10.90.90.90 1.3.6.1.2.1.2.2.1.1

@@ -222,7 +222,7 @@ async function loadPorts() {
           id: p.id,
           switchId: swObj.id,
           portName: p.number,
-          ifindex: p.ifindex ?? 0,
+          number: p.number ?? 0,
           hostName: p.hostname || swObj.hostname,
           ip: p.ipv4 || "",
           mac: p.mac || "",
