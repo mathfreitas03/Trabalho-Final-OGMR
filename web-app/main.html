@@ -60,7 +60,7 @@ body { background:#f7faf7; }
 <th></th>
 <th>Switch</th>
 <th>Porta</th>
-<th>Host</th>
+<th>Hostname</th>
 <th>IP</th>
 <th>MAC</th>
 <th>Status</th>
@@ -215,7 +215,6 @@ async function loadPorts() {
     if (!res.ok) throw new Error(await res.text());
     const data = await res.json();
 
-    // Flatten: cada switch -> suas portas
     ports = [];
     data.forEach(swObj => {
       swObj.ports.forEach(p => {
@@ -223,34 +222,19 @@ async function loadPorts() {
           id: p.id,
           switchId: swObj.id,
           portName: p.number,
-          hostName: swObj.hostname,
-          ip: p.ipv4,
-          mac: p.mac,
-          locked: !p.status,
-          lockable: p.lockable
+          ifindex: p.ifindex ?? 0,
+          hostName: p.hostname || swObj.hostname,
+          ip: p.ipv4 || "",
+          mac: p.mac || "",
+          locked: p.is_blocked === true,
+          lockable: p.lockable === true
         });
       });
     });
 
     renderTable();
   } catch (err) {
-    console.warn("Não foi possível buscar do Node/Java, usando mock:", err);
-
-    // fallback mock para testes
-    /*
-    let sw = switchSelect.value;
-    ports = mockPorts
-      .filter(p => !sw || p.switch_id == sw)
-      .map(p => ({
-        id: p.id,
-        switchId: p.switch_id,
-        portName: p.porta,
-        hostName: p.hostname,
-        ip: p.ip,
-        locked: !p.status,
-        lockable: p.lockable
-      }));
-    */
+    console.warn("Não foi possível buscar do Node/Java: ", err);
     renderTable();
   }
 }
